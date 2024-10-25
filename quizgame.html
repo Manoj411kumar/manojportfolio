@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aditya Quiz Application</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-image: url('https://blog.brainbout.in/wp-content/uploads/2021/01/19629-scaled.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: rgb(13, 13, 13);
+            padding: 20px;
+            border-radius: 8px;
+            background-image: url('https://th.bing.com/th/id/OIP.nu3oSm6bAp3dMfW_JERm3AHaEc?rs=1&pid=ImgDetMain');
+            background-size: cover;
+            box-shadow: 0 4px 8px rgba(17, 17, 17, 0.991);
+            transition: all 0.3s;
+        }
+        .container:hover {
+            transform: scale(1.05);
+            background-color: #2d2d2d;
+        }
+        .header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            height: 100px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #0d0c0c;
+            animation: headerFade 1.5s ease-in-out;
+        }
+        @keyframes headerFade {
+            0% { opacity: 0; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        .welcome {
+            text-align: center;
+            margin-bottom: 100px;
+            color: #3aff04;
+            opacity: 0;
+            animation: fadeIn 3s forwards;
+        }
+        .welcome h2 {
+            font-size: 28px;
+        }
+        .welcome p {
+            font-size: 18px;
+        }
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(-20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .question {
+            margin-bottom: 20px;
+        }
+        .options {
+            list-style-type: none;
+            padding: 0;
+        }
+        .options li {
+            margin-bottom: 10px;
+        }
+        .button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #e6ff06;
+            color: rgb(251, 7, 7);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+        .button:hover {
+            background-color: #03fd2d;
+            transform: scale(1.05);
+        }
+        .hidden {
+            display: none;
+        }
+        .feedback {
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background-color: #ddd;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            position: relative;
+        }
+        .progress-bar span {
+            display: block;
+            height: 100%;
+            background-color: #007bff;
+            width: 0;
+            border-radius: 5px;
+            transition: width 0.3s;
+        }
+        .timer {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 18px;
+            }
+            .button {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Welcome Section at the Top -->
+    <div class="welcome">
+        <h2>Welcome to the Aditya Quiz Application!</h2>
+        <p>Test your knowledge and improve your skills with our engaging quizzes. Select a topic, choose a difficulty level, and start answering questions to see how well you know the subject.</p>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>Aditya Quiz Application</h1>
+        </div>
+        
+        <div id="topicSelection">
+            <h2>Select a Topic:</h2>
+            <button class="button" onclick="selectTopic(1)">DBMS</button>
+            <button class="button" onclick="selectTopic(2)">Operating System</button>
+            <button class="button" onclick="selectTopic(3)">Data Structures in C</button>
+        </div>
+        
+        <div id="levelSelection" class="hidden">
+            <h2>Select a Difficulty Level:</h2>
+            <button class="button" onclick="selectLevel(1)">Easy</button>
+            <button class="button" onclick="selectLevel(2)">Medium</button>
+            <button class="button" onclick="selectLevel(3)">Hard</button>
+        </div>
+        
+        <div id="quiz" class="hidden">
+            <div class="timer">Time Left: <span id="timerValue">60</span> seconds</div>
+            <div class="progress-bar"><span id="progressBar"></span></div>
+            <div id="questionContainer" class="question"></div>
+            <ul id="optionsContainer" class="options"></ul>
+            <button class="button hidden" onclick="previousQuestion()" id="previousButton">Previous</button>
+            <button class="button" onclick="nextQuestion()">Next</button>
+            <button class="button" onclick="useHint()">Use Hint (10 Points)</button>
+            <p id="feedback" class="feedback"></p>
+        </div>
+        
+        <div id="result" class="hidden">
+            <h2>Your final score is <span id="score"></span></h2>
+            <button class="button" onclick="restartQuiz()">Restart Quiz</button>
+        </div>
+    </div>
+
+    <script>
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let questions = [];
+        let selectedTopic = null;
+        let selectedLevel = null;
+        let timer;
+        const TIMER_DURATION = 60; // seconds
+        let hintsUsed = 0;
+
+        const questionsData = {
+            1: { // DBMS
+                1: [ // Easy
+                    { question: "Which of the following is a NoSQL database?", options: ["MySQL", "MongoDB", "Oracle", "SQL Server"], correct: 1, isTrick: false },
+                    { question: "What is the full form of ACID in DBMS?", options: ["Atomicity, Consistency, Isolation, Durability", "Accountability, Consistency, Isolation, Durability", "Atomicity, Concurrency, Isolation, Database", "Atomicity, Consistency, Independence, Database"], correct: 0, isTrick: true },
+                    { question: "Which of the following is used to uniquely identify a record in a table?", options: ["Foreign Key", "Primary Key", "Unique Key", "Index"], correct: 1, isTrick: false },
+                    { question: "What is the purpose of normalization in DBMS?", options: ["To reduce redundancy", "To increase redundancy", "To simplify queries", "To speed up database access"], correct: 0, isTrick: false }
+                ],
+                2: [ // Medium
+                    { question: "Which of the following is a relational database?", options: ["Cassandra", "Redis", "MySQL", "CouchDB"], correct: 2, isTrick: false },
+                    { question: "Which normal form ensures no transitive dependencies?", options: ["1NF", "2NF", "3NF", "BCNF"], correct: 2, isTrick: false },
+                    { question: "What is a JOIN operation in SQL?", options: ["Combines rows from two or more tables", "Deletes rows from a table", "Updates rows in a table", "Selects a single row from a table"], correct: 0, isTrick: false },
+                    { question: "Which SQL keyword is used to prevent duplicate rows in a result set?", options: ["DISTINCT", "UNIQUE", "PRIMARY", "INDEX"], correct: 0, isTrick: false }
+                ],
+                3: [ // Hard
+                    { question: "In a database, what does the term 'denormalization' refer to?", options: ["Process of combining tables", "Process of splitting tables", "Process of increasing redundancy", "Process of removing redundancy"], correct: 2, isTrick: false },
+                    { question: "Which SQL clause is used to filter records?", options: ["ORDER BY", "GROUP BY", "WHERE", "HAVING"], correct: 2, isTrick: false },
+                    { question: "What is the purpose of indexing in a database?", options: ["To increase redundancy", "To speed up query processing", "To enforce constraints", "To add extra columns"], correct: 1, isTrick: false },
+                    { question: "What is a stored procedure in SQL?", options: ["A precompiled collection of SQL statements", "A user-defined table", "A temporary table", "A view that updates automatically"], correct: 0, isTrick: false }
+                ]
+            },
+            2: { // Operating System
+                1: [ // Easy
+                    { question: "What does OS stand for?", options: ["Operating System", "Open Source", "Offline Storage", "Optical Sensor"], correct: 0, isTrick: false },
+                    { question: "Which of the following is a type of operating system?", options: ["Windows", "MongoDB", "MySQL", "Apache"], correct: 0, isTrick: false },
+                    { question: "What is the main function of an OS?", options: ["To manage hardware and software resources", "To run web servers", "To manage databases", "To create graphics"], correct: 0, isTrick: false },
+                    { question: "Which operating system is known for its open-source nature?", options: ["Linux", "Windows", "MacOS", "iOS"], correct: 0, isTrick: false }
+                ],
+                2: [ // Medium
+                    { question: "What does the term 'multitasking' mean in operating systems?", options: ["Running multiple processes simultaneously", "Running a single process", "Running processes sequentially", "Running processes in isolation"], correct: 0, isTrick: false },
+                    { question: "Which OS is designed specifically for mobile devices?", options: ["Android", "Windows", "Linux", "MacOS"], correct: 0, isTrick: false },
+                    { question: "What is 'virtual memory' in an operating system?", options: ["Memory that is created by the OS to extend physical memory", "Memory that is used only by virtual machines", "Memory that cannot be accessed by applications", "Memory reserved for system use"], correct: 0, isTrick: false },
+                    { question: "Which component of the operating system manages file operations?", options: ["File System", "Kernel", "Shell", "Device Driver"], correct: 0, isTrick: false }
+                ],
+                3: [ // Hard
+                    { question: "What is a 'deadlock' in operating systems?", options: ["A situation where two or more processes are stuck waiting for each other", "A system crash", "A memory leak", "An infinite loop"], correct: 0, isTrick: false },
+                    { question: "What is the role of a 'scheduler' in an OS?", options: ["To manage process execution", "To manage network connections", "To handle disk I/O", "To provide a user interface"], correct: 0, isTrick: false },
+                    { question: "Which algorithm is commonly used for process scheduling?", options: ["Round Robin", "Depth-First Search", "Binary Search", "Merge Sort"], correct: 0, isTrick: false },
+                    { question: "What is 'thrashing' in operating systems?", options: ["Excessive paging or swapping", "Excessive CPU usage", "Excessive memory allocation", "Excessive disk access"], correct: 0, isTrick: false }
+                ]
+            },
+            3: { // Data Structures in C
+                1: [ // Easy
+                    { question: "Which of the following is a linear data structure?", options: ["Array", "Tree", "Graph", "Hash Table"], correct: 0, isTrick: false },
+                    { question: "What is the size of a pointer in a 32-bit system?", options: ["4 bytes", "8 bytes", "2 bytes", "1 byte"], correct: 0, isTrick: false },
+                    { question: "Which data structure uses LIFO principle?", options: ["Stack", "Queue", "List", "Array"], correct: 0, isTrick: false },
+                    { question: "Which data structure is used to implement recursion?", options: ["Stack", "Queue", "Array", "Linked List"], correct: 0, isTrick: false }
+                ],
+                2: [ // Medium
+                    { question: "What is the time complexity of binary search in a sorted array?", options: ["O(log n)", "O(n)", "O(n log n)", "O(1)"], correct: 0, isTrick: false },
+                    { question: "What is a circular linked list?", options: ["A list where the last node points to the first node", "A list with nodes arranged in a circle", "A list where nodes are connected in a circular fashion", "A list where elements are added in circular order"], correct: 0, isTrick: false },
+                    { question: "Which sorting algorithm has the best average-case time complexity?", options: ["Quick Sort", "Bubble Sort", "Insertion Sort", "Merge Sort"], correct: 0, isTrick: false },
+                    { question: "What is the main advantage of a doubly linked list over a singly linked list?", options: ["Bidirectional traversal", "Faster insertion", "Reduced memory usage", "Easier to implement"], correct: 0, isTrick: false }
+                ],
+                3: [ // Hard
+                    { question: "What is the time complexity of insertion operation in a balanced binary search tree?", options: ["O(log n)", "O(n)", "O(n log n)", "O(1)"], correct: 0, isTrick: false },
+                    { question: "What is a B-tree?", options: ["A balanced tree data structure used for indexing", "A binary tree with all nodes having at most two children", "A tree with a variable number of children per node", "A type of self-balancing binary search tree"], correct: 0, isTrick: false },
+                    { question: "What is the purpose of a hash function in hash tables?", options: ["To map keys to indices in the hash table", "To sort the elements", "To maintain the order of elements", "To implement a priority queue"], correct: 0, isTrick: false },
+                    { question: "Which algorithm is used for finding the shortest path in a weighted graph?", options: ["Dijkstra's Algorithm", "Kruskal's Algorithm", "Prim's Algorithm", "Bellman-Ford Algorithm"], correct: 0, isTrick: false }
+                ]
+            }
+        };
+
+        function selectTopic(topicId) {
+            selectedTopic = topicId;
+            document.getElementById('topicSelection').classList.add('hidden');
+            document.getElementById('levelSelection').classList.remove('hidden');
+        }
+
+        function selectLevel(levelId) {
+            selectedLevel = levelId;
+            questions = questionsData[selectedTopic][selectedLevel];
+            startQuiz();
+        }
+
+        function startQuiz() {
+            document.getElementById('levelSelection').classList.add('hidden');
+            document.getElementById('quiz').classList.remove('hidden');
+            displayQuestion();
+            startTimer();
+        }
+
+        function startTimer() {
+            let timeLeft = TIMER_DURATION;
+            document.getElementById('timerValue').textContent = timeLeft;
+
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timerValue').textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    endQuiz();
+                }
+            }, 1000);
+        }
+
+        function displayQuestion() {
+            if (currentQuestionIndex < questions.length) {
+                const question = questions[currentQuestionIndex];
+                document.getElementById('questionContainer').textContent = question.question;
+                const optionsContainer = document.getElementById('optionsContainer');
+                optionsContainer.innerHTML = '';
+                question.options.forEach((option, index) => {
+                    const li = document.createElement('li');
+                    li.textContent = option;
+                    li.onclick = () => selectOption(index);
+                    optionsContainer.appendChild(li);
+                });
+            }
+        }
+
+        function selectOption(optionIndex) {
+            const question = questions[currentQuestionIndex];
+            const isCorrect = optionIndex === question.correct;
+            const feedbackElement = document.getElementById('feedback');
+            if (isCorrect) {
+                score += 10;
+                feedbackElement.textContent = "Correct!";
+            } else {
+                feedbackElement.textContent = "Wrong!";
+            }
+            document.getElementById('score').textContent = score;
+            nextQuestion();
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                displayQuestion();
+            } else {
+                endQuiz();
+            }
+        }
+
+        function previousQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                displayQuestion();
+            }
+        }
+
+        function useHint() {
+            const question = questions[currentQuestionIndex];
+            if (hintsUsed >= 1 || score < 10) {
+                alert("Not enough points or hint already used.");
+                return;
+            }
+            hintsUsed++;
+            score -= 10;
+            document.getElementById('score').textContent = score;
+            const optionsContainer = document.getElementById('optionsContainer');
+            const correctOption = question.correct;
+            const options = optionsContainer.children;
+            for (let i = 0; i < options.length; i++) {
+                if (i !== correctOption) {
+                    options[i].style.color = 'red';
+                } else {
+                    options[i].style.color = 'green';
+                }
+            }
+        }
+
+        function endQuiz() {
+            clearInterval(timer);
+            document.getElementById('quiz').classList.add('hidden');
+            document.getElementById('result').classList.remove('hidden');
+        }
+
+        function restartQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            hintsUsed = 0;
+            document.getElementById('result').classList.add('hidden');
+            document.getElementById('topicSelection').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

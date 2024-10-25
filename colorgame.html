@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #e8eff0;
+            background-image: url('https://plays.org/screenshots/find-the-color.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            padding: 0;
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #gameContainer {
+            background-image: url('https://th.bing.com/th/id/OIP.Ql2vGQbRaoOZnN_5vhqttAHaHa?rs=1&pid=ImgDetMain');
+            border: 1px solid #478683;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            display: inline-block;
+            position: relative;
+            z-index: 1;
+        }
+        #colorLabel {
+            font-size: 60px;
+            margin: 20px 0;
+            animation: colorChange 0.5s;
+        }
+        #scoreLabel, #timeLabel {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+        #instructions {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            font-size: 18px;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #488885;
+            width: 100%;
+            max-width: 300px;
+            box-sizing: border-box;
+        }
+        #restartButton {
+            display: none;
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #478683;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #progressBar {
+            height: 10px;
+            background-color: #ddd;
+            border-radius: 5px;
+            margin-top: 10px;
+            position: relative;
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+        #progress {
+            height: 100%;
+            background-color: #478683;
+            border-radius: 5px;
+            width: 100%;
+            transition: width 1s linear;
+        }
+        .correct {
+            color: green;
+            animation: fadeIn 0.5s;
+        }
+        .incorrect {
+            color: red;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes colorChange {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="instructions">Type in the color of the words, and not the word text!</div>
+        <div id="scoreLabel">Press Enter to Start</div>
+        <div id="timeLabel">Time left: 30</div>
+        <div id="progressBar"><div id="progress"></div></div>
+        <div id="colorLabel">Color</div>
+        <input type="text" id="colorInput" placeholder="Type the color">
+        <button id="restartButton">Restart Game</button>
+        <audio id="backgroundMusic" src="https://www.example.com/your-audio-file.mp3" loop></audio>
+    </div>
+
+    <script>
+        const colors = ['Red', 'Blue', 'Green', 'Pink', 'Black', 'Yellow', 'Orange', 'White'];
+        let score = 0;
+        let timeLeft = 30;
+        let gameStarted = false;
+        const colorLabel = document.getElementById('colorLabel');
+        const scoreLabel = document.getElementById('scoreLabel');
+        const timeLabel = document.getElementById('timeLabel');
+        const colorInput = document.getElementById('colorInput');
+        const restartButton = document.getElementById('restartButton');
+        const progressBar = document.getElementById('progress');
+        const backgroundMusic = document.getElementById('backgroundMusic');
+        const correctSound = new Audio('https://www.soundjay.com/button/beep-07.wav');
+        const incorrectSound = new Audio('https://www.soundjay.com/button/beep-10.wav');
+
+        function startGame() {
+            if (!gameStarted) {
+                gameStarted = true;
+                score = 0;
+                timeLeft = 30;
+                scoreLabel.textContent = 'Score: 0';
+                timeLabel.textContent = 'Time left: ' + timeLeft;
+                colorInput.disabled = false;
+                colorInput.value = '';
+                colorInput.focus();
+                restartButton.style.display = 'none';
+                progressBar.style.width = '100%';
+                backgroundMusic.play();
+                countdown();
+                nextColor();
+            }
+        }
+
+        function nextColor() {
+            if (timeLeft > 0) {
+                const colorIndex = Math.floor(Math.random() * colors.length);
+                const textColor = colors[(colorIndex + 1) % colors.length];
+                const displayColor = colors[colorIndex];
+                colorLabel.style.color = textColor;
+                colorLabel.textContent = displayColor;
+                colorInput.value = '';
+                colorInput.focus();
+                colorLabel.classList.remove('correct', 'incorrect');
+            }
+        }
+
+        function countdown() {
+            if (timeLeft > 0) {
+                timeLeft--;
+                timeLabel.textContent = 'Time left: ' + timeLeft;
+                progressBar.style.width = (timeLeft / 30 * 100) + '%';
+                setTimeout(countdown, 1000);
+            } else {
+                endGame();
+            }
+        }
+
+        function endGame() {
+            gameStarted = false;
+            scoreLabel.textContent = 'Final Score: ' + score;
+            colorLabel.textContent = 'Game Over';
+            colorInput.disabled = true;
+            restartButton.style.display = 'inline-block';
+            backgroundMusic.pause();
+            backgroundMusic.currentTime = 0;
+        }
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                if (gameStarted) {
+                    const currentColor = getComputedStyle(colorLabel).color;
+                    const inputColor = colorInput.value.trim().toLowerCase();
+                    if (inputColor === rgbToColorName(currentColor)) {
+                        score++;
+                        scoreLabel.textContent = 'Score: ' + score;
+                        nextColor();
+                        correctSound.play();
+                        colorLabel.classList.add('correct');
+                    } else {
+                        incorrectSound.play();
+                        colorLabel.classList.add('incorrect');
+                    }
+                } else {
+                    startGame();
+                }
+            }
+        });
+
+        function rgbToColorName(rgb) {
+            switch (rgb) {
+                case 'rgb(255, 0, 0)': return 'red';
+                case 'rgb(0, 0, 255)': return 'blue';
+                case 'rgb(0, 255, 0)': return 'green';
+                case 'rgb(255, 192, 203)': return 'pink';
+                case 'rgb(0, 0, 0)': return 'black';
+                case 'rgb(255, 255, 0)': return 'yellow';
+                case 'rgb(255, 165, 0)': return 'orange';
+                case 'rgb(255, 255, 255)': return 'white';
+                default: return '';
+            }
+        }
+
+        restartButton.addEventListener('click', startGame);
+    </script>
+</body>
+</html>
